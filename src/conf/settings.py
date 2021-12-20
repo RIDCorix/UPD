@@ -2,9 +2,9 @@ from typing import List, Dict
 
 from core.options import Optionable, Option
 
-
-class settings:
+class Settings():
     pass
+
 
 class SettingsCategory(Optionable):
     def __getattr__(self, attr):
@@ -27,7 +27,7 @@ class Configuration:
             for name, category in self.categories.items():
                 return category.options[attr].value
 
-    def do_dict(self):
+    def to_dict(self):
         settings_map = {}
         for name, category in self.categories.items():
             for setting_name, option in category.options.items():

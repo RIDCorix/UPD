@@ -1,8 +1,9 @@
-from typing import Any, Hashable
+from typing import Any, Hashable, Optional
 
 import datetime
 
 from contextlib import contextmanager
+from PySide6 import QtCore
 
 from PySide6.QtGui import QPalette
 from PySide6.QtCore import QPropertyAnimation
@@ -11,18 +12,29 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QColorD
 class RWidget(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.group = QtCore.QParallelAnimationGroup(self)
+        self.update_timer = QtCore.QTimer()
+        self.update_timer.timeout.connect(self.constantly_update)
+        self.constantly_update()
 
-    def slide(self, att: str, from_value: Any, to_value: Any, duration: int=500):
+    def constantly_update(self):
+        self.update()
+        self.update_timer.start(1000) #1 min intervall
+
+
+    def slide(self, att: str, from_value: Any, to_value: Any, duration: int=500, callback: Optional[str]=None):
         self.anim = QPropertyAnimation(self, att.encode())
         self.anim.setStartValue(from_value)
         self.anim.setEndValue(to_value)
         self.anim.setDuration(duration)
-        self.anim.start()
+        self.anim.start(QtCore.QAbstractAnimation.DeleteWhenStopped)
+        if callback:
+            self.anim.finished.connect(getattr(self, callback))
 
-    
+
 
 class ConsoleBlock:
-    def __init__(self, root=None, parent=None, text='', *args, **kwargs):
+    def __init__(self, root=None, parent=None, text='', auto_update=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if root is None:
             self.root = self
@@ -33,6 +45,7 @@ class ConsoleBlock:
         self.parent = parent
         self.blocks = []
 
+        self.auto_update = False
         self._index = 0
         self._title = ''
         self._total = 1
@@ -62,7 +75,7 @@ class ConsoleBlock:
         self.root.update(**kwargs)
 
     @contextmanager
-    def block(self, temp=True):
+    def block(self, temp=False):
         block = ConsoleBlock(self.root, self)
         self.blocks.append(block)
         yield block

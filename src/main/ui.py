@@ -7,7 +7,7 @@ from PySide6 import QtWidgets
 from core.utils import slide
 from core.ui import RWidget, Console
 
-from conf import settings
+from main import settings
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -76,33 +76,37 @@ class LoadingScreen(RWidget):
         self.label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.label.setFont(QFont('Share Tech Mono', 60))
         self.label.setMinimumSize(300, 200)
-
+        self.loaded = False
         self.setProperty('type', 'panel')
-        self.slide('drop_rate', 0, 1)
-
 
 
     def load(self):
         import importlib
-        installed_extensions = ['main']
+        from main.tool import tool
+        tools = [tool]
         QApplication.processEvents()
         with self.console.block() as block:
-            for i, extension in enumerate(installed_extensions):
-                block.progress(f'Initializing...', done, total)
-                with block.block() as task_block:
-                    done = i+1
-                    total = len(self.task_set)
-                    tool = importlib.import_module(extension + 'tool').tool
-                    block.progress(tool.name, done, total)
-                    for i, task in enumerate(tool.init_tasks):
+            for i, tool in enumerate(tools):
+                done = i+1
+                total = len(tools)
+                block.progress(f'Initializing...{tool}', done, total)
+                for i, task in enumerate(tool.init_tasks):
+                    with block.block() as task_block:
+                        done = i+1
+                        total = len(tool.init_tasks)
+                        block.progress(f'{task}', done, total)
                         with block.block() as task_block:
-                            task(console=task_block)
+                            task(tool, console=task_block)
+        self.console.line('Complete')
+        self.slide('drop_rate', 1.0, 0.0, callback='pulled')
 
-            block.done()
-
+    def pulled(self):
+        print('pulled')
 
     def paintEvent(self, e):
         super().paintEvent(e)
+        self.update()
+        self.console.update()
         center = self.rect().center()
         width = self.rect().width()
         height = self.rect().height()
