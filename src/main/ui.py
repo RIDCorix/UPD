@@ -41,7 +41,7 @@ class LoadingScreen(RWidget):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._drop_rate = 0
+        self._drop_rate = 0.0
         self.label = QLabel('UPD', self)
         self.label.setText('UPD')
         self.console = Console('Loading assets...<br> initializing ui...<font color="rgb(0, 0, 0)">text</font>')
@@ -78,13 +78,12 @@ class LoadingScreen(RWidget):
         self.label.setMinimumSize(300, 200)
         self.loaded = False
         self.setProperty('type', 'panel')
+        self.slide('drop_rate', 0.0, 1.0, callback='pulled')
 
 
     def load(self):
-        import importlib
         from main.tool import tool
         tools = [tool]
-        QApplication.processEvents()
         with self.console.block() as block:
             for i, tool in enumerate(tools):
                 done = i+1
@@ -97,16 +96,17 @@ class LoadingScreen(RWidget):
                         block.progress(f'{task}', done, total)
                         with block.block() as task_block:
                             task(tool, console=task_block)
+
         self.console.line('Complete')
-        self.slide('drop_rate', 1.0, 0.0, callback='pulled')
+        # self.slide('drop_rate', 1.0, 0.0, callback='pulled')
 
     def pulled(self):
         print('pulled')
 
     def paintEvent(self, e):
         super().paintEvent(e)
-        self.update()
         self.console.update()
+
         center = self.rect().center()
         width = self.rect().width()
         height = self.rect().height()

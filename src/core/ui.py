@@ -12,25 +12,21 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QColorD
 class RWidget(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.group = QtCore.QParallelAnimationGroup(self)
-        self.update_timer = QtCore.QTimer()
-        self.update_timer.timeout.connect(self.constantly_update)
-        self.constantly_update()
-
-    def constantly_update(self):
-        self.update()
-        self.update_timer.start(1000) #1 min intervall
-
 
     def slide(self, att: str, from_value: Any, to_value: Any, duration: int=500, callback: Optional[str]=None):
         self.anim = QPropertyAnimation(self, att.encode())
         self.anim.setStartValue(from_value)
         self.anim.setEndValue(to_value)
+        self.anim.valueChanged.connect(self._update)
         self.anim.setDuration(duration)
-        self.anim.start(QtCore.QAbstractAnimation.DeleteWhenStopped)
+
         if callback:
             self.anim.finished.connect(getattr(self, callback))
 
+        self.anim.start(QtCore.QAbstractAnimation.DeleteWhenStopped)
+
+    def _update(self):
+        print(self.anim.currentValue())
 
 
 class ConsoleBlock:
