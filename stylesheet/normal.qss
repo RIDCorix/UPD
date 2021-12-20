@@ -1,0 +1,46 @@
+QWidget[hidden="True"]
+{{
+    background-color:transparent;
+}}
+
+QLabel
+{{
+    color: rgba{TEXT_COLOR};
+    font-family: {FONT_MONO};
+}}
+
+QMenu
+{{
+    background-color : #EFF0F1; 
+    border: 1px solid #BCBCBC;
+
+}}
+
+QMenu::item:selected
+{{ 
+    background-color : #6EC5F4;
+    color : #31363b
+}}
+
+QToolTip
+{{ 
+    color: #31363b; 
+    background-color: #EFF0F1;
+    border: 1px solid #E3E3E3;
+}} 
+
+QWidget[type="panel"]
+{{
+    background: rgba(255, 255, 255, 200);
+    border-style: solid;
+    border-color: white white white white;
+    border-radius: 2px;
+}}
+
+QTabWidget::pane
+{{
+    background: #EFF0F1;
+    border: 1px solid #E3E3E3;
+    border-color: black white black black;
+    border-radius: 2px;
+}}

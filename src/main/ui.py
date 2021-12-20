@@ -1,42 +1,130 @@
-from PySide6.QtWidgets import QWidget, QMainWindow, QPushButton, QLabel, QVBoxLayout
-from PySide6.QtCore import Property, QPropertyAnimation, QPoint, QEasingCurve, Qt
-from PySide6.QtGui import QPainter
+from typing import Awaitable
+from PySide6.QtWidgets import QApplication, QSizePolicy, QWidget, QMainWindow, QPushButton, QLabel, QVBoxLayout, QVBoxLayout, QScrollArea
+from PySide6.QtCore import Property, QPropertyAnimation, QPoint, QEasingCurve, QRect, Qt
+from PySide6.QtGui import QBrush, QFont, QPainter, QPen
+from PySide6 import QtWidgets
 
 from core.utils import slide
+from core.ui import RWidget, Console
+
+from conf import settings
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        self.setMinimumSize(1000, 600)
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowTitle("My App")
-
-        button = QPushButton("Press Me!")
 
         # Set the central widget of the Window.
-        self.setCentralWidget(button)
+        self.navigate(LoadingScreen())
+
+    def navigate(self, widget: QWidget):
+        widget.resize(self.size()*9/10)
+        self.setCentralWidget(widget)
+
+    def load(self):
+        self.centralWidget().load()
 
 
-class LoadingScreen(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setFixedSize(800, 600)
-        self.setWindowFlags(Qt.FramelessWindowHint)
+class LoadingScreen(RWidget):
+    def get_drop_rate(self):
+        return self._drop_rate
 
-        self.drop_rate = 0
 
-        self.setWindowTitle("My App")
-        self.label = QLabel('BRUH')
+    def set_drop_rate(self,val):
+        self._drop_rate = val
+        self.update()
 
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.label)
+    drop_rate = Property(float, get_drop_rate, set_drop_rate)
 
-        slide(self, 'pos', QPoint(0, 0), QPoint(100, 100))
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._drop_rate = 0
+        self.label = QLabel('UPD', self)
+        self.label.setText('UPD')
+        self.console = Console('Loading assets...<br> initializing ui...<font color="rgb(0, 0, 0)">text</font>')
+
+
+        effect = QtWidgets.QGraphicsDropShadowEffect(self)
+        effect.setOffset(0, 0)
+        effect.setBlurRadius(20)
+        self.setGraphicsEffect(effect)
+
+        effect = QtWidgets.QGraphicsOpacityEffect(self.console)
+        effect.setOpacity(0.1)
+        self.console.setGraphicsEffect(effect)
+        self.console.setFont(QFont('Share Tech Mono', 10))
+        self.console.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        self.console.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.console.setWordWrap(True)
+
+        self.console_area = QScrollArea(self)
+        self.console_area.setWidget(self.console)
+        self.console_area.setProperty('hidden', 'True')
+        self.console_area.setStyleSheet("background-color:transparent;")
+        self.console_area.setFixedSize(600, 200)
+        self.console_area.setWidgetResizable(True)
+        bar = self.console_area.verticalScrollBar()
+        bar.rangeChanged.connect( lambda x,y: bar.setValue(y) )
+
+
+        effect = QtWidgets.QGraphicsOpacityEffect(self.label)
+        effect.setOpacity(0.1)
+        self.label.setGraphicsEffect(effect)
+        self.label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.label.setFont(QFont('Share Tech Mono', 60))
+        self.label.setMinimumSize(300, 200)
+
+        self.setProperty('type', 'panel')
+        self.slide('drop_rate', 0, 1)
+
+
+
+    def load(self):
+        import importlib
+        installed_extensions = ['main']
+        QApplication.processEvents()
+        with self.console.block() as block:
+            for i, extension in enumerate(installed_extensions):
+                block.progress(f'Initializing...', done, total)
+                with block.block() as task_block:
+                    done = i+1
+                    total = len(self.task_set)
+                    tool = importlib.import_module(extension + 'tool').tool
+                    block.progress(tool.name, done, total)
+                    for i, task in enumerate(tool.init_tasks):
+                        with block.block() as task_block:
+                            task(console=task_block)
+
+            block.done()
+
 
     def paintEvent(self, e):
+        super().paintEvent(e)
+        center = self.rect().center()
+        width = self.rect().width()
+        height = self.rect().height()
+
+        self.label.move(center - QPoint(0, 50+height * (1-self.drop_rate) / 20) - self.label.rect().center())
+        self.console_area.move(center + QPoint(0, 150+height * (1-self.drop_rate) / 20) - self.console_area.rect().center())
+
+        if self.drop_rate < 1:
+            self.label.graphicsEffect().setOpacity(self.drop_rate)
+            self.console.graphicsEffect().setOpacity(self.drop_rate)
 
         painter = QPainter()
         painter.begin(self)
-        painter.setPen(Qt.red)
+        painter.setPen(QPen(settings.BORDER_COLOR, 2))
+        painter.drawLine(center - QPoint(width * self.drop_rate / 5, 0), center + QPoint(width * self.drop_rate / 5, 0))
 
-        painter.drawLine(QPoint(0, 0), QPoint(100, 100))
+
+        painter.drawRect(self.rect())
+        painter.setPen(QPen(settings.BORDER_COLOR, 0))
+        painter.setBrush(QBrush(settings.PANEL_COLOR))
+        rect = self.rect()
+        size = rect.bottomRight()
+        rect = QRect(size/20, size*19/20)
+        painter.drawRect(rect)
         painter.end()
