@@ -1,5 +1,3 @@
-from PySide6.QtGui import QPixmap
-
 from upd.extension import Tool
 
 class FileCabinet(Tool):

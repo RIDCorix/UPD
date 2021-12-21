@@ -1,5 +1,6 @@
-from file_cabinet import tool
+from .tool import tool
 
-@tool.init_tasks
+@tool.init_task
 def test(tool):
+    print('im here')
     pass
