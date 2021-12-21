@@ -1,7 +1,7 @@
 from PySide6.QtGui import QColor
 
-from core.options import ColorOption, FontOption
-from conf.settings import Settings, Configuration
+from upd.options import ColorOption, FontOption
+from upd.conf import Configuration
 from . import tasks
 settings = Configuration()
 

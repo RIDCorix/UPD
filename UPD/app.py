@@ -1,5 +1,6 @@
 from PySide6.QtCore import QFile, QTextStream
 from PySide6.QtWidgets import QApplication, QWidget
+from yapsy.PluginManager import PluginManager
 
 import sys
 import threading
@@ -15,4 +16,5 @@ rendered = open("stylesheet/normal.qss", "r").read().format(**settings.to_dict()
 app.setStyleSheet(rendered)
 t = threading.Thread(target=window.load)
 t.start()
-app.exec()
+sys.exit(app.exec())
+

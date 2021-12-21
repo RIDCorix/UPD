@@ -4,8 +4,8 @@ from PySide6.QtCore import Property, QPropertyAnimation, QPoint, QEasingCurve, Q
 from PySide6.QtGui import QBrush, QFont, QPainter, QPen
 from PySide6 import QtWidgets
 
-from core.utils import slide
-from core.ui import Console, MainPanel, RLineEdit, Navigator
+from extension.utils import get_tools
+from upd.ui import Console, MainPanel, RLineEdit, Navigator
 
 
 class MainWindow(QMainWindow):
@@ -28,6 +28,7 @@ class MainWindow(QMainWindow):
             self.centralWidget().load()
         except:
             pass
+
 
 class LoadingScreen(MainPanel):
 
@@ -118,9 +119,8 @@ class Desk(MainPanel):
         self.navigator = Navigator(self)
         self.navigator.setGeometry(100, 100, 200, 400)
         self.navigator.on_select(self.navigate)
-        from file_cabinet.tool import tool
-        tools = [tool]
-        for tool in tools:
+
+        for tool in get_tools():
             self.navigator.add_option(tool.get_icon(), tool.get_name(), tool)
 
     def navigate(self ,tool):

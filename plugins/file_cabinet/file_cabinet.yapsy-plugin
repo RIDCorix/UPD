@@ -1,0 +1,7 @@
+[Core]
+Name = File Cabinet
+Module = file_cabinet
+
+[Documentation]
+Author = RIDCorix
+Version = 0.1

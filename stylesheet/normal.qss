@@ -3,10 +3,14 @@ QWidget[hidden="True"]
     background-color:transparent;
 }}
 
+QWidget
+{{
+    font-family: {FONT_MONO};
+}}
+
 QLabel
 {{
     color: rgba{TEXT_COLOR};
-    font-family: {FONT_MONO};
 }}
 
 QMenu
@@ -49,5 +53,5 @@ QLineEdit
     color: rgba{TEXT_COLOR};
     font-family: {FONT_MONO};
     border-width: 1px; border-style: solid; border-color: black black black white;
-    background: rgba{PANEL_COLOR};    
+    background: rgba{PANEL_COLOR};
 }}
