@@ -1,5 +1,5 @@
-from file_cabinet import FileCabinet
+from file_cabinet import tool
 
-
+@tool.init_tasks
 def test(tool):
     pass

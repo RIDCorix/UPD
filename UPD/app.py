@@ -1,9 +1,10 @@
 from PySide6.QtCore import QFile, QTextStream
 from PySide6.QtWidgets import QApplication, QWidget
-from yapsy.PluginManager import PluginManager
 
 import sys
 import threading
+
+from extension.utils import get_tools
 
 app = QApplication(sys.argv)
 from main.ui import MainWindow
