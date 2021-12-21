@@ -1,0 +1,3 @@
+[submodule "src/upd-core"]
+	path = src/upd-core
+	url = git@github.com:RIDCorix/UPD-Core.git
