@@ -1,6 +1,6 @@
 from typing import Any
 
-from core.ui import ColorPicker
+from .ui import ColorPicker
 
 
 class Optionable:
@@ -9,7 +9,6 @@ class Optionable:
 
     def add_options(self, **options):
         self.options.update(options)
-
 
 class Option:
     def __init__(self, name: str, default: Any, *args, **kwargs):

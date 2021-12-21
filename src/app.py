@@ -10,7 +10,6 @@ from main.ui import MainWindow
 window = MainWindow()
 window.show()
 from main import settings
-print(settings.to_dict())
 rendered = open("stylesheet/normal.qss", "r").read().format(**settings.to_dict())
 
 app.setStyleSheet(rendered)

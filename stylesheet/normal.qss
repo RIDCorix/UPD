@@ -44,3 +44,10 @@ QTabWidget::pane
     border-color: black white black black;
     border-radius: 2px;
 }}
+QLineEdit
+{{
+    color: rgba{TEXT_COLOR};
+    font-family: {FONT_MONO};
+    border-width: 1px; border-style: solid; border-color: black black black white;
+    background: rgba{PANEL_COLOR};    
+}}

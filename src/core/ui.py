@@ -4,29 +4,137 @@ import datetime
 
 from contextlib import contextmanager
 from PySide6 import QtCore
+from PySide6 import QtWidgets
 
-from PySide6.QtGui import QPalette
-from PySide6.QtCore import QPropertyAnimation
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QColorDialog
+from PySide6.QtGui import QBrush, QColor, QPainter, QPalette, QPen, QRadialGradient
+from PySide6.QtCore import Property, QEasingCurve, QParallelAnimationGroup, QPoint, QPointF, QPropertyAnimation, QRect, Signal, Slot
+from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QWidget, QVBoxLayout, QPushButton, QLabel, QColorDialog
 
-class RWidget(QWidget):
+
+class Slidable:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.from_value = None
+        self.to_value = None
+        self._slide_signal.connect(self._slide)
+        self._slide_att = b''
+        self._slide_from = 0
+        self._slide_to = 1
+        self._slide_duration = 500
+        self._slide_callback = None
+        self._easing = None
 
-    def slide(self, att: str, from_value: Any, to_value: Any, duration: int=500, callback: Optional[str]=None):
-        self.anim = QPropertyAnimation(self, att.encode())
-        self.anim.setStartValue(from_value)
-        self.anim.setEndValue(to_value)
-        self.anim.valueChanged.connect(self._update)
-        self.anim.setDuration(duration)
+    def _slide(self):
+        self.anim.stop()
+        self.anim.setPropertyName(self._slide_att)
+        self.anim.setStartValue(self._slide_from)
+        self.anim.setEndValue(self._slide_to)
+        self.anim.setDuration(self._slide_duration)
+        if self._easing:
+            self.anim.setEasingCurve(self._easing)
+        if self._slide_callback:
+            self.anim.finished.connect(getattr(self, self._slide_callback))
 
-        if callback:
-            self.anim.finished.connect(getattr(self, callback))
+        self.anim.start()
 
-        self.anim.start(QtCore.QAbstractAnimation.DeleteWhenStopped)
+    _slide_signal = Signal()
 
-    def _update(self):
-        print(self.anim.currentValue())
+    @Slot()
+    def slide(self, att: str, from_value: Any, to_value: Any, duration: int=500, callback: Optional[str]=None, easing=QEasingCurve.OutCubic):
+        self._slide_att = att.encode()
+        self._slide_from = from_value
+        self._slide_to = to_value
+        self._slide_duration = duration
+        self._slide_callback = callback
+        self._easing=easing
+        self._slide_signal.emit()
+
+
+class RLineEdit(Slidable,QLineEdit):
+    def get_focus_rate(self):
+        return self._focus_rate
+
+    def set_focus_rate(self,val):
+        self._focus_rate = val
+        self.update()
+
+    focus_rate = Property(float, get_focus_rate, set_focus_rate)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.anim = QPropertyAnimation(self, b'')
+        self._focus_rate = 0
+        self._slide()
+
+    def focusInEvent(self, event):
+        super().focusInEvent(event)
+        self.slide('focus_rate', 0, 1)
+
+    def focusOutEvent(self, event):
+        super().focusOutEvent(event)
+        self.slide('focus_rate', self.focus_rate, 0)
+
+    def paintEvent(self, e):
+        from main import settings
+        painter = QPainter()
+        painter.begin(self)
+        start = QPointF(0, self.size().height()/2)
+        gradient = QRadialGradient(start, 50)
+
+        gradient.setColorAt(0, QColor(0, 0, 0))
+        color = settings.BORDER_COLOR
+        color.a = 0
+        gradient.setColorAt(self.focus_rate, color)
+
+        painter.setBrush(QBrush(gradient))
+        painter.drawRect(self.rect())
+        painter.end()
+        super().paintEvent(e)
+
+
+class MainPanel(Slidable, QWidget):
+    def get_drop_rate(self):
+        return self._drop_rate
+
+    def set_drop_rate(self,val):
+        self._drop_rate = val
+        self.update()
+
+    drop_rate = Property(float, get_drop_rate, set_drop_rate)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._drop_rate = 0.0
+
+        self.anim = QPropertyAnimation(self, b'')
+
+        effect = QtWidgets.QGraphicsDropShadowEffect(self)
+        effect.setOffset(0, 0)
+        effect.setBlurRadius(20)
+        self.setGraphicsEffect(effect)
+
+        self.setProperty('type', 'panel')
+        self.slide('drop_rate', 0.0, 1.0)
+
+
+    def paintEvent(self, e):
+        from main import settings
+        super().paintEvent(e)
+
+        painter = QPainter()
+        painter.begin(self)
+        painter.setPen(QPen(settings.BORDER_COLOR, 2))
+
+        painter.drawRect(self.rect())
+        painter.setPen(QPen(settings.BORDER_COLOR, 0))
+        painter.setBrush(QBrush(settings.PANEL_COLOR))
+        rect = self.rect()
+        size = rect.bottomRight()
+        short = min(rect.width(), rect.height())
+        shrink = QPoint(short, short) / 20
+        rect = QRect(shrink, size-shrink)
+        painter.drawRect(rect)
+        painter.end()
 
 
 class ConsoleBlock:
@@ -103,6 +211,7 @@ class ConsoleBlock:
             text += block.get_text(depth+1, anim=anim, flush=flush)
         return text
 
+
 class Console(QLabel, ConsoleBlock):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -132,3 +241,49 @@ class ColorPicker(QWidget):
             palette = self.label.palette()
             palette.setColor(QPalette.Background, color)
             self.label.setPalette(palette)
+
+class Navigator(MainPanel):
+    def get_expand_rate(self):
+        return self._focus_rate
+
+    def set_expand_rate(self,val):
+        self._focus_rate = val
+        self.update()
+
+    expand_rate = Property(float, get_expand_rate, set_expand_rate)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.anim = QPropertyAnimation(self, b'')
+        self._expand_rate = 0
+        self._slide()
+        self._parent = self.parent()
+
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        head_widget = QWidget()
+        head_layout = QHBoxLayout()
+        layout.addWidget(head_widget)
+
+        head_widget.setLayout(head_layout)
+        head_layout.addWidget(QLabel('Tools'))
+        head_layout.addWidget(QPushButton('+'))
+
+    def paintEvent(self, e):
+        from main import settings
+        painter = QPainter()
+        painter.begin(self)
+        super().paintEvent(e)
+
+    def on_select(self, callback):
+        self.callback_on_select = callback
+
+    def add_option(self, icon, name, data=None):
+        option = QPushButton(icon, name)
+        option.setProperty('data', data)
+        option.clicked.connect(lambda: self.option_selected(data))
+        self.layout().addWidget(option)
+
+    def option_selected(self, data):
+        self.callback_on_select(data)

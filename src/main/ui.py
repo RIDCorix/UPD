@@ -1,13 +1,12 @@
 from typing import Awaitable
-from PySide6.QtWidgets import QApplication, QSizePolicy, QWidget, QMainWindow, QPushButton, QLabel, QVBoxLayout, QVBoxLayout, QScrollArea
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QLineEdit, QSizePolicy, QWidget, QMainWindow, QPushButton, QLabel, QVBoxLayout, QVBoxLayout, QScrollArea
 from PySide6.QtCore import Property, QPropertyAnimation, QPoint, QEasingCurve, QRect, Qt
 from PySide6.QtGui import QBrush, QFont, QPainter, QPen
 from PySide6 import QtWidgets
 
 from core.utils import slide
-from core.ui import RWidget, Console
+from core.ui import Console, MainPanel, RLineEdit, Navigator
 
-from main import settings
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -18,39 +17,25 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("My App")
 
         # Set the central widget of the Window.
-        self.navigate(LoadingScreen())
+        self.navigate(Desk())
 
     def navigate(self, widget: QWidget):
         widget.resize(self.size()*9/10)
         self.setCentralWidget(widget)
 
     def load(self):
-        self.centralWidget().load()
+        try:
+            self.centralWidget().load()
+        except:
+            pass
 
-
-class LoadingScreen(RWidget):
-    def get_drop_rate(self):
-        return self._drop_rate
-
-
-    def set_drop_rate(self,val):
-        self._drop_rate = val
-        self.update()
-
-    drop_rate = Property(float, get_drop_rate, set_drop_rate)
+class LoadingScreen(MainPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._drop_rate = 0.0
         self.label = QLabel('UPD', self)
         self.label.setText('UPD')
         self.console = Console('Loading assets...<br> initializing ui...<font color="rgb(0, 0, 0)">text</font>')
-
-
-        effect = QtWidgets.QGraphicsDropShadowEffect(self)
-        effect.setOffset(0, 0)
-        effect.setBlurRadius(20)
-        self.setGraphicsEffect(effect)
 
         effect = QtWidgets.QGraphicsOpacityEffect(self.console)
         effect.setOpacity(0.1)
@@ -77,8 +62,6 @@ class LoadingScreen(RWidget):
         self.label.setFont(QFont('Share Tech Mono', 60))
         self.label.setMinimumSize(300, 200)
         self.loaded = False
-        self.setProperty('type', 'panel')
-        self.slide('drop_rate', 0.0, 1.0, callback='pulled')
 
 
     def load(self):
@@ -98,12 +81,13 @@ class LoadingScreen(RWidget):
                             task(tool, console=task_block)
 
         self.console.line('Complete')
-        # self.slide('drop_rate', 1.0, 0.0, callback='pulled')
+        self.slide('drop_rate', 1.0, 0.0, callback='pulled')
 
     def pulled(self):
-        print('pulled')
+        self.parent().navigate(Desk(self.parent()))
 
     def paintEvent(self, e):
+        from main import settings
         super().paintEvent(e)
         self.console.update()
 
@@ -117,18 +101,27 @@ class LoadingScreen(RWidget):
         if self.drop_rate < 1:
             self.label.graphicsEffect().setOpacity(self.drop_rate)
             self.console.graphicsEffect().setOpacity(self.drop_rate)
-
+        self.pain
         painter = QPainter()
         painter.begin(self)
         painter.setPen(QPen(settings.BORDER_COLOR, 2))
         painter.drawLine(center - QPoint(width * self.drop_rate / 5, 0), center + QPoint(width * self.drop_rate / 5, 0))
 
-
-        painter.drawRect(self.rect())
-        painter.setPen(QPen(settings.BORDER_COLOR, 0))
-        painter.setBrush(QBrush(settings.PANEL_COLOR))
-        rect = self.rect()
-        size = rect.bottomRight()
-        rect = QRect(size/20, size*19/20)
-        painter.drawRect(rect)
         painter.end()
+
+
+class Desk(MainPanel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+        self.navigator = Navigator(self)
+        self.navigator.setGeometry(100, 100, 200, 400)
+        self.navigator.on_select(self.navigate)
+        from file_cabinet.tool import tool
+        tools = [tool]
+        for tool in tools:
+            self.navigator.add_option(tool.get_icon(), tool.get_name(), tool)
+
+    def navigate(self ,tool):
+        self.parent().navigate(tool.get_main_panel())
