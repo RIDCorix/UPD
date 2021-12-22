@@ -1,6 +1,7 @@
 from PySide6.QtCore import QFile, QTextStream
 from PySide6.QtWidgets import QApplication, QWidget
 
+
 import sys
 import threading
 
@@ -8,7 +9,6 @@ from extension.utils import get_tools
 
 app = QApplication(sys.argv)
 from main.ui import MainWindow
-
 window = MainWindow()
 window.show()
 from main import settings

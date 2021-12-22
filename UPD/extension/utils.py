@@ -9,10 +9,12 @@ import sys
 def get_tools():
     import importlib
     tools = ['file_cabinet']
-    tool_installation_dir = 'C:/Users/User/UPD/plugins'
-    sys.path.append(tool_installation_dir)
+    tool_installation_dir1 = 'C:/Users/User/UPD/plugins'
+    tool_installation_dir2 = '/Users/mac/UPD/plugins'
+    sys.path.append(tool_installation_dir1)
+    sys.path.append(tool_installation_dir2)
     tool_instances = []
-    auto_load_modules = ['tasks', 'ui']
+    auto_load_modules = ['tasks', 'ui', 'models']
     for tool in tools:
         tool_instances.append(importlib.import_module('.'.join([tool, 'tool'])).tool)
         for module in auto_load_modules:
