@@ -6,6 +6,10 @@ import sys
 import threading
 
 from extension.utils import get_tools
+from peewee import *
+
+get_tools()
+from file_cabinet.models import Drawer
 
 app = QApplication(sys.argv)
 from main.ui import MainWindow

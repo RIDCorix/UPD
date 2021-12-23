@@ -7,8 +7,6 @@ from upd.ui import MainPanel, RLineEdit, RGridView
 class FileCabinetPanel(MainPanel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        import pdb;pdb.set_trace()
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-        self.grid = RGridView()
-        layout.addWidget(self.grid)
+        from .models import Drawer
+        print(Drawer.select().dicts())
+        self.grid = RGridView(self)

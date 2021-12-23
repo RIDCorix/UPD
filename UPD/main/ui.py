@@ -17,7 +17,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("My App")
 
         # Set the central widget of the Window.
-        self.navigate(Desk())
+        self.navigate(LoadingScreen())
 
     def navigate(self, widget: QWidget):
         widget.resize(self.size()*9/10)
@@ -102,7 +102,7 @@ class LoadingScreen(MainPanel):
         if self.drop_rate < 1:
             self.label.graphicsEffect().setOpacity(self.drop_rate)
             self.console.graphicsEffect().setOpacity(self.drop_rate)
-        self.pain
+
         painter = QPainter()
         painter.begin(self)
         painter.setPen(QPen(settings.BORDER_COLOR, 2))
