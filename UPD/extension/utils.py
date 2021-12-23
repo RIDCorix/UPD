@@ -8,7 +8,7 @@ import sys
 
 def get_tools():
     import importlib
-    tools = ['file_cabinet']
+    tools = ['file_cabinet', 'us']
     tool_installation_dir1 = 'C:/Users/User/UPD/plugins'
     tool_installation_dir2 = '/Users/mac/UPD/plugins'
     sys.path.append(tool_installation_dir1)
