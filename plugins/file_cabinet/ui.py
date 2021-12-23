@@ -1,5 +1,5 @@
-from PySide6.QtWidgets import QPushButton, QVBoxLayout
-from PySide6.QtCore import QRect
+from PySide6.QtWidgets import QPushButton, QScrollArea, QVBoxLayout
+from PySide6.QtCore import QRect, Qt
 from .tool import tool
 from .models import Drawer
 
@@ -12,6 +12,7 @@ class FileCabinetPanel(MainPanel):
         self.grid = RGridView(self)
         self.grid.bind_model(Drawer, name='name', description='description')
         self.grid.on_create(self.add_drawer)
+
 
     def add_drawer(self):
         Drawer.create()
