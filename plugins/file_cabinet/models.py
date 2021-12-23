@@ -9,10 +9,10 @@ from .tool import tool
 
 @tool.model
 class Drawer(RBaseModel):
-    name = CharField()
+    name = CharField(default='')
 
 
 @tool.model
 class Variable(RBaseModel):
-    name = CharField(unique=True)
+    name = CharField(default='')
     drawer = ForeignKeyField(Drawer, related_name='variables')

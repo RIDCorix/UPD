@@ -82,7 +82,7 @@ class LoadingScreen(MainPanel):
                             task(tool, console=task_block)
 
         self.console.line('Complete')
-        self.slide('drop_rate', 1.0, 0.0, callback='pulled')
+        self.slide('drop_rate', 1.0, 0.0, callback=self.pulled)
 
     def pulled(self):
         self.parent().navigate(Desk(self.parent()))
