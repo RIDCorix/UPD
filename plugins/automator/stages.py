@@ -1,0 +1,2 @@
+class ScriptStage:
+    pass

@@ -25,14 +25,7 @@ class Graph(RBaseModel):
     pass
 
 class HasGraph(RBaseModel):
-    @property
-    def graph(self):
-        return self.graphs.get()
-
-    @graph.setter
-    def graph(self, account_obj):
-        account_obj.person = self
-        account_obj.save(only=[Graph.grp])
+    project = ForeignKeyField(Project, related_name='nodes')
 
 
 @tool.model
