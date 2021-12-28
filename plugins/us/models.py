@@ -36,7 +36,7 @@ class Node(RBaseModel):
     x = FloatField(default=0)
     y = FloatField(default=0)
 
-    project = ForeignKeyField(Project, related_name='nodes')
+    graph = ForeignKeyField(Graph, related_name='nodes')
 
     @property
     def position(self):

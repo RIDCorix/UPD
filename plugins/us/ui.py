@@ -1,6 +1,6 @@
 from PySide6 import QtCore
 from PySide6.QtGui import QAction, QBrush, QColor, QPainter, QPen
-from PySide6.QtWidgets import QMenu, QPushButton, QScrollArea, QVBoxLayout
+from PySide6.QtWidgets import QLabel, QMenu, QPushButton, QScrollArea, QVBoxLayout
 from PySide6.QtCore import QPoint, QRect, QSize, Qt
 from .tool import tool
 from .models import Project
@@ -28,58 +28,89 @@ class UsPanel(MainPanel):
         super().paintEvent(e)
 
 
-class GraphCanvas(RWidget):
+class GraphCanvas(MainPanel):
     def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.graph_id = data['id']
-        self.nodes = []
+        self.nodes = {}
+
+        self.node_data = []
+        self.connection_data = []
+
         self.relations = []
-        self.data = []
         self.graph = None
+
+        self.mouse_pos = QPoint(0, 0)
 
         self.add_node_menu = QMenu(self)
         self.add_node_menu.addAction('hello', self.add_node)
-        GraphNode(self)
+        self.refresh_data()
 
     def add_node(self):
-        print(self.sender())
+        Node.create(x=self.mouse_pos.x(), y=self.mouse_pos.y(), graph_id=self.graph_id)
+        self.refresh_data()
 
     def mousePressEvent(self, event):
         if event.type() == QtCore.QEvent.MouseButtonPress:
             if event.button() == QtCore.Qt.RightButton:
-                self.add_node_menu.move(self.parent().pos() + event.pos())
+                self.mouse_pos = event.pos()
+                self.add_node_menu.move(self.mouse_pos+self.parent().pos())
                 self.add_node_menu.exec()
             else:
                 super().mousePressEvent(event)
 
     def get_data(self):
-        self.nodes = Node.filter(Node.graph==self.graph)
-        pass
+        self.node_data = Node.select(Node.id, Node.name, Node.x, Node.y).dicts()
 
-    def refresh_data():
-        pass
+    def refresh_data(self):
+        self.get_data()
+        self.refresh()
 
-    def refresh():
-        pass
+    def refresh(self):
+        for item in self.node_data:
+            if item['id'] not in self.nodes:
+                pos = QPoint(item['x'], item['y'])
+                node = GraphNode(item, self)
+                node.show()
+                node.slide('pos', to_value=pos)
+                self.nodes[item['id']] = node
+
+            self.nodes[item['id']].update_data(item)
 
 
 class GraphNode(MainPanel):
-    def __init__(self, *args, **kwargs):
+
+    SIZE_MINIMAL = QSize(50, 50)
+    SIZE_WIDE = QSize(400, 50)
+    SIZE_FULL = QSize(400, 600)
+
+    def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.slide('size', QSize(0, 0), QSize(300, 200))
+        self.slide('size', QSize(0, 0), self.SIZE_MINIMAL)
+        self.data = data
+        self.label = RLineEdit('A Task')
+        layout = QVBoxLayout()
+        layout.addWidget(self.label)
+        self.setLayout(layout)
+
+    def update_data(self, data):
+        self.data = data
+
+    def mousePressEvent(self, event):
+        self.slide('size', to_value=self.SIZE_FULL)
 
     def focusInEvent(self, event):
         super().focusInEvent(event)
-        self.slide('size', to_value=QSize(400, 600))
+        self.slide('size', to_value=self.SIZE_WIDE)
 
     def focusOutEvent(self, event):
         super().focusOutEvent(event)
-        self.slide('size', to_value=QSize(300, 200))
+        self.slide('size', to_value=self.SIZE_MINIMAL)
 
     def enterEvent(self, event):
         super().enterEvent(event)
-        self.slide('size', to_value=QSize(400, 600))
+        self.slide('size', to_value=self.SIZE_WIDE)
 
     def leaveEvent(self, event):
         super().leaveEvent(event)
-        self.slide('size', to_value=QSize(300, 200))
+        self.slide('size', to_value=self.SIZE_MINIMAL)
