@@ -164,8 +164,8 @@ class GraphNode(MainPanel):
     def update_data(self, data):
         self.data = data
 
-    def update(self, *args, **kwargs):
-        super().update(*args, **kwargs)
+    def paintEvent(self, *args, **kwargs):
+        super().paintEvent(*args, **kwargs)
         size = self.header.size()
         size.setWidth(len(self.label.text())*10 + 100)
         self.header.slide('size', to_value=size)
