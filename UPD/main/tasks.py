@@ -48,8 +48,6 @@ def initialize_extensions(tool, *args, **kwargs):
             block.progress('initializing extensions', i, total)
             for j, task in enumerate(tool.init_tasks):
                 block.progress('initializing extensions', j, total)
-                print(task)
                 task(tool, console=block.block())
-                
 
     block.done()
