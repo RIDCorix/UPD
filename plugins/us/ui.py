@@ -1,6 +1,6 @@
 from PySide6 import QtCore
 from PySide6.QtGui import QAction, QBrush, QColor, QPainter, QPen
-from PySide6.QtWidgets import QLabel, QMenu, QPushButton, QScrollArea, QVBoxLayout
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsWidget, QLabel, QMenu, QPushButton, QScrollArea, QVBoxLayout
 from PySide6.QtCore import QPoint, QRect, QSize, Qt
 from .tool import tool
 from .models import Project
@@ -31,6 +31,7 @@ class UsPanel(MainPanel):
 class GraphCanvas(MainPanel):
     def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.scene = QGraphicsScene()
         self.graph_id = data['id']
         self.nodes = {}
 
@@ -74,11 +75,32 @@ class GraphCanvas(MainPanel):
                 node.show()
                 node.slide('pos', to_value=pos)
                 self.nodes[item['id']] = node
+                self.scene.addItem(node)
 
             self.nodes[item['id']].update_data(item)
 
 
-class GraphNode(MainPanel):
+class RNode(QGraphicsWidget):
+    def paintEvent(self, e):
+        super().paintEvent(e)
+
+        painter = QPainter()
+        painter.begin(self)
+        painter.setPen(QPen(QColor(255, 255, 255), 2))
+
+        painter.drawRect(self.rect())
+        painter.setPen(QPen(QColor(255, 255, 255), 0))
+        painter.setBrush(QBrush(QColor(0, 0, 0, 100)))
+        rect = self.rect()
+        size = rect.bottomRight()
+        short = min(rect.width(), rect.height())
+        self.shrink = QPoint(short, short) / 20
+        rect = QRect(self.shrink, size-self.shrink)
+        painter.drawRect(rect)
+        painter.end()
+
+
+class GraphNode(MainPanel, QGraphicsWidget):
 
     SIZE_MINIMAL = QSize(50, 50)
     SIZE_WIDE = QSize(400, 50)
