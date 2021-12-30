@@ -4,11 +4,10 @@ from PySide6.QtGui import QAction, QBrush, QColor, QIcon, QPainter, QPen, QPixma
 from PySide6.QtWidgets import QCheckBox, QGraphicsItem, QGraphicsScene, QGraphicsWidget, QHBoxLayout, QLabel, QMenu, QMenuBar, QPushButton, QScrollArea, QVBoxLayout, QWidget
 from PySide6.QtCore import QPoint, QRect, QSize, Qt
 from .tool import tool
-from .models import Project
+from .models import Project, Connection, Node
 
 from upd.ui import MainPanel, RLineEdit, RGridView, RWidget, RButton
 
-from .models import Node, Relation
 
 
 @tool.main_panel
@@ -32,6 +31,9 @@ class UsPanel(MainPanel):
 class GraphCanvas(MainPanel):
     def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.connecting = False
+        self.connecting_from = None
+
         self.always_show_title = QCheckBox('Always Show Title', self)
 
         self.offset = QPoint(0, 0)
@@ -41,7 +43,9 @@ class GraphCanvas(MainPanel):
         self.dragging_from = QPoint(0, 0)
 
         self.graph_id = data['id']
+
         self.nodes = {}
+        self.connections = {}
 
         self.node_data = []
         self.connection_data = []
@@ -58,8 +62,21 @@ class GraphCanvas(MainPanel):
         self.add_node_menu.addAction('hello', self.add_node)
         self.refresh_data()
 
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Alt:
+            self.connecting = True
+
+        return super().keyPressEvent(event)
+
     def add_node(self):
         Node.create(x=self.mouse_pos.x(), y=self.mouse_pos.y(), graph_id=self.graph_id)
+        self.refresh_data()
+
+    def create_connection(self, to_id):
+        if self.connecting_from == to_id:
+            return
+        else:
+            Connection.create(from_node_id=self.connecting_from, to_node_id=to_id)
         self.refresh_data()
 
     def mouseMoveEvent(self, event):
@@ -87,7 +104,8 @@ class GraphCanvas(MainPanel):
                 self.mouse_pos -= self.offset
                 self.add_node_menu.exec()
             elif event.button() == QtCore.Qt.LeftButton:
-                self.dragging = True
+                if not self.dragging_node_id:
+                    self.dragging = True
                 self.dragging_from = event.pos()
             else:
                 super().mousePressEvent(event)
@@ -102,13 +120,15 @@ class GraphCanvas(MainPanel):
                 super().mouseReleaseEvent(event)
 
     def get_data(self):
-        self.node_data = Node.select(Node.id, Node.name, Node.x, Node.y).dicts()
+        self.node_data = Node.select(Node.id, Node.name, Node.x, Node.y).where(Node.removed==False).dicts()
+        self.connection_data = Connection.select(Connection.type, Connection.id, Connection.from_node, Connection.to_node).where(Connection.removed==False).dicts()
 
     def refresh_data(self):
         self.get_data()
         self.refresh()
 
     def refresh(self):
+        items_to_remove = list(self.nodes.keys())
         for item in self.node_data:
             if item['id'] not in self.nodes:
                 node = GraphNode(item, self)
@@ -116,9 +136,33 @@ class GraphCanvas(MainPanel):
                 self.nodes[item['id']] = node
 
             pos = QPoint(item['x'], item['y'])
-            self.nodes[item['id']].slide('pos', to_value=pos + self.offset)
+            self.nodes[item['id']].slide('pos', to_value=pos + self.offset-self.nodes[item['id']].rect().center())
             self.nodes[item['id']].update_data(item)
+            try:
+                items_to_remove.remove(item['id'])
+            except:
+                pass
 
+        for node_id in items_to_remove:
+            node = self.nodes[node_id]
+            node.removed=True
+            node.slide('size', to_value=QSize(0, 0))
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        painter = QPainter()
+        painter.begin(self)
+        painter.setPen(QColor(255, 255, 255))
+        for item in self.connection_data:
+            if item['id'] not in self.connections:
+                from_node = self.nodes[item['from_node']]
+                to_node = self.nodes[item['to_node']]
+
+            from_point = from_node.pos() + from_node.rect().center()
+            to_point = to_node.pos() + to_node.rect().center()
+            painter.drawLine(from_point, to_point)
+
+        painter.end()
 
 class NodeTitle(RLineEdit):
     def __init__(self, node, *args, **kwargs):
@@ -142,20 +186,35 @@ class GraphNode(MainPanel):
         self.SIZE_MINIMAL = QSize(50, 50)
         self.SIZE_WIDE = QSize(400, 50)
         self.SIZE_FULL = QSize(400, 600)
+        self.removed = False
 
         self.slide('size', QSize(0, 0), self.SIZE_MINIMAL)
         self.data = data
+
         self.label = NodeTitle(self, self.data['name'])
         self.label.textChanged.connect(self.rename)
+
         self.header = RWidget(self)
         self.header_layout = QHBoxLayout()
         self.header.setLayout(self.header_layout)
+
         self.icon = RButton(QPixmap('assets/file-cabinet/icon.png'), '')
         self.icon.setFixedSize(30, 30)
+
+        self.remove_button = RButton('x')
+        self.remove_button.setFixedSize(30, 30)
+        self.remove_button.clicked.connect(self.remove)
+
         self.header_layout.addWidget(self.icon)
         self.header_layout.addWidget(self.label)
+        self.header_layout.addWidget(self.remove_button)
 
         self.header.move(0, 0)
+
+    def remove(self):
+        Node.update(removed=True).where(Node.id==self.data['id']).execute()
+        self.parent().refresh_data()
+        self.parent().refresh()
 
     def rename(self, e):
         Node.update(name=self.label.text()).where(Node.id==self.data['id']).execute()
@@ -165,27 +224,39 @@ class GraphNode(MainPanel):
         self.data = data
 
     def paintEvent(self, *args, **kwargs):
-        super().paintEvent(*args, **kwargs)
-        size = self.header.size()
-        size.setWidth(len(self.label.text())*10 + 100)
-        self.header.slide('size', to_value=size)
-        self.SIZE_WIDE.setWidth(len(self.label.text())*10 + 100)
+        if not self.removed:
+            self.parent().update()
+            super().paintEvent(*args, **kwargs)
+            size = self.header.size()
+            size.setWidth(len(self.label.text())*10 + 100)
+            self.header.slide('size', to_value=size)
+            self.SIZE_WIDE.setWidth(len(self.label.text())*10 + 100)
 
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
-            self.parent().dragging_node_id = self.data['id']
-            self.parent().dragging_node_from = event.pos() + self.pos() - self.parent().pos()
+        if not self.removed:
+            if event.button() == QtCore.Qt.LeftButton:
+                if self.parent().connecting:
+                    self.parent().connecting_from = self.data['id']
+                else:
+                    self.parent().dragging_node_id = self.data['id']
+                    self.parent().dragging_node_from = event.pos() + self.pos()
 
     def mouseReleaseEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
-            self.parent().dragging_node_id = None
+        if not self.removed:
+            if event.button() == QtCore.Qt.LeftButton:
+                if self.parent().connecting_from:
+                    self.parent().create_connection(self.data['id'])
+
+                self.parent().dragging_node_id = None
 
     def enterEvent(self, event):
         super().enterEvent(event)
-        self.slide('size', to_value=self.SIZE_WIDE)
+        if not self.removed:
+            self.slide('size', to_value=self.SIZE_WIDE)
 
     def leaveEvent(self, event):
         super().leaveEvent(event)
-        if not self.label.hasFocus():
-            if not self.parent().always_show_title.isChecked():
-                self.slide('size', to_value=self.SIZE_MINIMAL)
+        if not self.removed:
+            if not self.label.hasFocus():
+                if not self.parent().always_show_title.isChecked():
+                    self.slide('size', to_value=self.SIZE_MINIMAL)

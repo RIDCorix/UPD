@@ -33,6 +33,8 @@ class Node(RBaseModel):
     name = CharField(default='')
     description = CharField(default='')
 
+    removed = BooleanField(default=False)
+
     x = FloatField(default=0)
     y = FloatField(default=0)
 
@@ -43,7 +45,10 @@ class Node(RBaseModel):
         return (self.x, self.y)
 
 @tool.model
-class Relation(RBaseModel):
+class Connection(RBaseModel):
     key = CharField(default='')
+    type = CharField(default='')
     from_node = ForeignKeyField(Node, related_name='to_relations')
     to_node = ForeignKeyField(Node, related_name='from_relations')
+
+    removed = BooleanField(default=False)
