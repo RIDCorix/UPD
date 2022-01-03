@@ -1,11 +1,11 @@
 from typing import Awaitable
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QLineEdit, QSizePolicy, QWidget, QMainWindow, QPushButton, QLabel, QVBoxLayout, QVBoxLayout, QScrollArea
+from PySide6.QtWidgets import QApplication, QGridLayout, QHBoxLayout, QLineEdit, QSizePolicy, QTabWidget, QWidget, QMainWindow, QPushButton, QLabel, QVBoxLayout, QVBoxLayout, QScrollArea
 from PySide6.QtCore import Property, QPropertyAnimation, QPoint, QEasingCurve, QRect, Qt
 from PySide6.QtGui import QBrush, QFont, QPainter, QPen
 from PySide6 import QtWidgets
 
 from extension.utils import get_tools
-from upd.ui import Console, MainPanel, RLineEdit, Navigator
+from upd.ui import Console, MainPanel, RLineEdit, Navigator, RButton
 
 
 class MainWindow(QMainWindow):
@@ -18,6 +18,7 @@ class MainWindow(QMainWindow):
 
         # Set the central widget of the Window.
         self.navigate(LoadingScreen())
+
 
     def navigate(self, widget: QWidget):
         widget.resize(self.size()*9/10)
@@ -66,8 +67,8 @@ class LoadingScreen(MainPanel):
 
 
     def load(self):
-        from main.tool import tool
-        tools = [tool]
+        from extension.utils import get_tools
+        tools = get_tools()
         with self.console.block() as block:
             for i, tool in enumerate(tools):
                 done = i+1
@@ -88,7 +89,7 @@ class LoadingScreen(MainPanel):
         self.parent().navigate(Desk(self.parent()))
 
     def paintEvent(self, e):
-        from main import settings
+        from upd.conf import settings
         super().paintEvent(e)
         self.console.update()
 
@@ -111,6 +112,42 @@ class LoadingScreen(MainPanel):
         painter.end()
 
 
+class SettingsPanel(MainPanel):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        grid = QGridLayout()
+        self.setLayout(grid)
+
+        # setting the inner widget and layout
+        grid_inner = QGridLayout(self)
+        wid_inner = QWidget(self)
+        wid_inner.setLayout(grid_inner)
+
+        # add the inner widget to the outer layout
+        grid.addWidget(wid_inner)
+
+        # add tab frame to widget
+        wid_inner.tab = QTabWidget(wid_inner)
+        grid_inner.addWidget(wid_inner.tab)
+
+        from upd.conf import settings
+
+        layout = QVBoxLayout()
+        for category_id, category in settings.categories.items():
+            # layout.addWidget(option)
+            # create tab
+            new_tab = QWidget(wid_inner.tab)
+            layout = QVBoxLayout(new_tab)
+            layout.setSpacing(10)
+            for option_id, option in category.options.items():
+                option.real_time_init()
+                layout.addWidget(option)
+
+            new_tab.tab_name_private = "test1"
+            wid_inner.tab.addTab(new_tab, category_id)
+
+
 class Desk(MainPanel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -119,6 +156,8 @@ class Desk(MainPanel):
         self.navigator = Navigator(self)
         self.navigator.setGeometry(100, 100, 200, 400)
         self.navigator.on_select(self.navigate)
+        self.settings_button = RButton('settings', self)
+        self.settings_button.clicked.connect(lambda : self.parent().navigate(SettingsPanel()))
 
         for tool in get_tools():
             self.navigator.add_option(tool.get_icon(), tool.get_name(), tool)

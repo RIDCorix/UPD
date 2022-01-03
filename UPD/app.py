@@ -13,9 +13,10 @@ from file_cabinet.models import Drawer
 
 app = QApplication(sys.argv)
 from main.ui import MainWindow
+from main.settings import tool
 window = MainWindow()
 window.show()
-from main import settings
+from upd.conf import settings
 rendered = open("stylesheet/normal.qss", "r").read().format(**settings.to_dict())
 
 app.setStyleSheet(rendered)

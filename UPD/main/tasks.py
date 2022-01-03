@@ -35,19 +35,3 @@ def initialize_db(tool, *args, **kwargs):
             db.create_tables(tool.models)
 
     block.done()
-
-
-@UPD.init_task
-def initialize_extensions(tool, *args, **kwargs):
-    console = kwargs.get('console')
-    console.line('initialize_extensions')
-
-    total = len(get_tools())
-    with console.block() as block:
-        for i, tool in enumerate(get_tools()):
-            block.progress('initializing extensions', i, total)
-            for j, task in enumerate(tool.init_tasks):
-                block.progress('initializing extensions', j, total)
-                task(tool, console=block.block())
-
-    block.done()
