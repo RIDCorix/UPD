@@ -13,5 +13,5 @@ tool.settings(
     FONT_MONO=FontOption('Font (mono)', 'Share Tech Mono'),
     FONT_NORMAL=FontOption('Font (normal)', 'caveat'),
     FONT_HANDWRITING=FontOption('Font (handwriting)', 'caveat'),
-    RENDERER=RendererOption('Renderer', 'default'),
+    RENDERER=RendererOption('Renderer', 'no style'),
 )

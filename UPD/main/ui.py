@@ -135,17 +135,21 @@ class SettingsPanel(MainPanel):
 
         layout = QVBoxLayout()
         for category_id, category in settings.categories.items():
-            # layout.addWidget(option)
             # create tab
             new_tab = QWidget(wid_inner.tab)
             layout = QVBoxLayout(new_tab)
             layout.setSpacing(10)
             for option_id, option in category.options.items():
                 option.real_time_init()
-                layout.addWidget(option)
+                editor = option.editor()
+                option.init_ui(editor)
+                layout.addWidget(editor)
 
             new_tab.tab_name_private = "test1"
             wid_inner.tab.addTab(new_tab, category_id)
+
+        self.leave_button = RButton('back', self)
+        self.leave_button.clicked.connect(lambda : self.parent().navigate(Desk()))
 
 
 class Desk(MainPanel):
