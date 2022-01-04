@@ -58,8 +58,8 @@ class RFloatPanelRenderer(RWidgetRenderer):
         start = QPointF(0, widget.size().height()/2)
         gradient = QRadialGradient(start, 50)
 
-        gradient.setColorAt(0, border_color)
-        color = panel_color
+        gradient.setColorAt(0, panel_color)
+        color = QColor(panel_color)
         color.a = 0
         gradient.setColorAt(widget.focus_rate, color)
 
@@ -76,14 +76,14 @@ class RFloatPanelRenderer(RWidgetRenderer):
             text_color,
         ) = self.get_options('background_color', 'border_color', 'panel_color', 'text_color')
 
-        widget.line_edit.setStyleSheet(f'QWidget{{color: rgba{text_color.toTuple()};}}')
+        widget.text_edit.setStyleSheet(f'QWidget{{color: rgba{text_color.toTuple()};}}')
         painter = QPainter()
         painter.begin(widget)
         start = QPointF(0, widget.size().height()/2)
-        gradient = QRadialGradient(start, 50)
-
-        gradient.setColorAt(0, border_color)
-        color = panel_color
+        gradient = QRadialGradient(start, 200)
+        gradient.setCenter(0, 0)
+        gradient.setColorAt(0, QColor(panel_color))
+        color = QColor(panel_color.value())
         color.a = 0
         gradient.setColorAt(widget.focus_rate, color)
 

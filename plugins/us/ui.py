@@ -163,6 +163,7 @@ class GraphCanvas(MainPanel):
         for node_id in items_to_remove:
             node = self.nodes[node_id]
             node.removed=True
+            node.deleteLater()
             node.slide('size', to_value=QSize(0, 0))
 
         self.update()
