@@ -6,8 +6,7 @@ from PySide6.QtCore import Property, QPoint, QRect, QSize, Qt
 from .tool import tool
 from .models import Project, Connection, Node
 
-from upd.ui import MainPanel, RLineEdit, RGridView, RWidget, RButton
-
+from upd.ui import MainPanel, RLineEdit, RGridView, RWidget, RButton, RTextEdit
 
 
 @tool.main_panel
@@ -31,6 +30,7 @@ class UsPanel(MainPanel):
 class GraphCanvas(MainPanel):
     def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.widget_type='graph'
         self.connecting = False
         self.connecting_from = None
 
@@ -167,22 +167,6 @@ class GraphCanvas(MainPanel):
 
         self.update()
 
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        painter = QPainter()
-        painter.begin(self)
-        painter.setPen(QColor(255, 255, 255))
-        for item in self.connection_data:
-            if item['id'] not in self.connections:
-                from_node = self.nodes[item['from_node']]
-                to_node = self.nodes[item['to_node']]
-
-            from_point = from_node.pos() + from_node.rect().center()
-            to_point = to_node.pos() + to_node.rect().center()
-            painter.drawLine(from_point, to_point)
-
-        painter.end()
-
 
 class NodeTitle(RLineEdit):
     def __init__(self, node, *args, **kwargs):
@@ -212,10 +196,10 @@ class GraphNode(MainPanel):
     def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._connector_rate = 0
-
+        self.widget_type = 'graph_node'
         self.SIZE_MINIMAL = QSize(50, 50)
         self.SIZE_WIDE = QSize(400, 50)
-        self.SIZE_FULL = QSize(400, 600)
+        self.SIZE_FULL = QSize(400, 400)
         self.removed = False
 
         self.slide('size', QSize(0, 0), self.SIZE_MINIMAL)
@@ -245,13 +229,31 @@ class GraphNode(MainPanel):
         self.header.move(0, 0)
         self.header.update()
 
+        self.content = RWidget()
+        self.content_layout = QVBoxLayout()
+        self.content.setLayout(self.content_layout)
+        self.content_layout.addWidget(RTextEdit())
+        self.content_layout.addWidget(RTextEdit())
+        self.content_layout.addWidget(RTextEdit())
+        self.content_layout.addWidget(RTextEdit())
+
+        self.content_scroll = QScrollArea(self)
+        self.content_scroll.setGeometry(50, 50, 300, 330)
+        self.content_scroll.setProperty('hidden', 'True')
+        # self.content_scroll.setStyleSheet('background-color:transparent;')
+        self.content_scroll.setAutoFillBackground(False)
+        # self.scroll.background
+        self.content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.content_scroll.setWidget(self.content)
+        self.content_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.content_scroll.setWidgetResizable(True)
+
     def _connect(self, node_id):
         if self.parent().connecting_from:
             self.parent().create_connection(node_id)
             self.parent().connecting_from = None
         else:
             self.parent().connecting_from = node_id
-
 
     def remove(self):
         Node.update(removed=True).where(Node.id==self.data['id']).execute()
@@ -267,15 +269,6 @@ class GraphNode(MainPanel):
     def update_data(self, data):
         self.data = data
 
-    def paintEvent(self, *args, **kwargs):
-        self.connector.setStyleSheet(f'background-color: rgba(255, 255, 255, {self.connector_rate});color: rgba(0, 0, 0, {self.connector_rate});')
-        if not self.removed:
-            self.parent().update()
-            super().paintEvent(*args, **kwargs)
-            self.header.setFixedWidth(max(self.size().width(), 150))
-            self.header.slide('size', to_value=QSize(self.size().width(), 50))
-            self.connector.move(self.pos()+self.rect().center()-self.connector.rect().center() + QPoint(0, -50*self.connector_rate))
-
     def mousePressEvent(self, event):
         if not self.removed:
             if event.button() == QtCore.Qt.LeftButton:
@@ -283,6 +276,11 @@ class GraphNode(MainPanel):
                 self.parent().dragging_node_from = event.pos() + self.pos()
 
     def mouseReleaseEvent(self, event):
+        parent = self.parent()
+        self.setParent(None)
+        self.setParent(parent)
+        self.show()
+        self.slide('size', to_value=self.SIZE_FULL)
         if not self.removed:
             if event.button() == QtCore.Qt.LeftButton:
                 self.parent().dragging_node_id = None

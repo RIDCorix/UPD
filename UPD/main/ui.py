@@ -5,7 +5,7 @@ from PySide6.QtGui import QBrush, QFont, QPainter, QPen
 from PySide6 import QtWidgets
 
 from extension.utils import get_tools
-from upd.ui import Console, MainPanel, RLineEdit, Navigator, RButton
+from upd.ui import Console, MainPanel, RLineEdit, Navigator, RButton, RTabWidget
 
 
 class MainWindow(QMainWindow):
@@ -35,6 +35,8 @@ class LoadingScreen(MainPanel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.widget_type = 'loading_screen'
+
         self.label = QLabel('UPD', self)
         self.label.setText('UPD')
         self.console = Console('Loading assets...<br> initializing ui...<font color="rgb(0, 0, 0)">text</font>')
@@ -88,29 +90,6 @@ class LoadingScreen(MainPanel):
     def pulled(self):
         self.parent().navigate(Desk(self.parent()))
 
-    def paintEvent(self, e):
-        from upd.conf import settings
-        super().paintEvent(e)
-        self.console.update()
-
-        center = self.rect().center()
-        width = self.rect().width()
-        height = self.rect().height()
-
-        self.label.move(center - QPoint(0, 50+height * (1-self.drop_rate) / 20) - self.label.rect().center())
-        self.console_area.move(center + QPoint(0, 150+height * (1-self.drop_rate) / 20) - self.console_area.rect().center())
-
-        if self.drop_rate < 1:
-            self.label.graphicsEffect().setOpacity(self.drop_rate)
-            self.console.graphicsEffect().setOpacity(self.drop_rate)
-
-        painter = QPainter()
-        painter.begin(self)
-        painter.setPen(QPen(settings.BORDER_COLOR, 2))
-        painter.drawLine(center - QPoint(width * self.drop_rate / 5, 0), center + QPoint(width * self.drop_rate / 5, 0))
-
-        painter.end()
-
 
 class SettingsPanel(MainPanel):
 
@@ -120,7 +99,7 @@ class SettingsPanel(MainPanel):
         self.setLayout(grid)
 
         # setting the inner widget and layout
-        grid_inner = QGridLayout(self)
+        grid_inner = QGridLayout()
         wid_inner = QWidget(self)
         wid_inner.setLayout(grid_inner)
 
@@ -128,7 +107,7 @@ class SettingsPanel(MainPanel):
         grid.addWidget(wid_inner)
 
         # add tab frame to widget
-        wid_inner.tab = QTabWidget(wid_inner)
+        wid_inner.tab = RTabWidget(wid_inner)
         grid_inner.addWidget(wid_inner.tab)
 
         from upd.conf import settings
