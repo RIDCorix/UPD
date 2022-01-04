@@ -68,6 +68,30 @@ class RFloatPanelRenderer(RWidgetRenderer):
         painter.end()
         super(Renderable, widget).paintEvent(event)
 
+    def render_text_edit(self, widget ,event):
+        (
+            background_color,
+            border_color,
+            panel_color,
+            text_color,
+        ) = self.get_options('background_color', 'border_color', 'panel_color', 'text_color')
+
+        widget.line_edit.setStyleSheet(f'QWidget{{color: rgba{text_color.toTuple()};}}')
+        painter = QPainter()
+        painter.begin(widget)
+        start = QPointF(0, widget.size().height()/2)
+        gradient = QRadialGradient(start, 50)
+
+        gradient.setColorAt(0, border_color)
+        color = panel_color
+        color.a = 0
+        gradient.setColorAt(widget.focus_rate, color)
+
+        painter.setBrush(QBrush(gradient))
+        painter.drawRect(widget.rect())
+        painter.end()
+        super(Renderable, widget).paintEvent(event)
+
     def render_item(self, widget, event):
         widget.label.resize(widget.size())
 

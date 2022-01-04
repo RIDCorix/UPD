@@ -240,7 +240,7 @@ class GraphNode(MainPanel):
         self.content_scroll = QScrollArea(self)
         self.content_scroll.setGeometry(50, 50, 300, 330)
         self.content_scroll.setProperty('hidden', 'True')
-        # self.content_scroll.setStyleSheet('background-color:transparent;')
+        self.content_scroll.setStyleSheet('background-color:transparent;')
         self.content_scroll.setAutoFillBackground(False)
         # self.scroll.background
         self.content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
