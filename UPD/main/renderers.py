@@ -88,7 +88,7 @@ class RFloatPanelRenderer(RWidgetRenderer):
         gradient.setColorAt(widget.focus_rate, color)
 
         painter.setBrush(QBrush(gradient))
-        # painter.drawRect(widget.rect())
+        painter.drawRect(widget.rect())
         painter.end()
         widget.setStyleSheet('background: transparent;')
         super(Renderable, widget).paintEvent(event)

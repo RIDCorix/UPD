@@ -164,6 +164,7 @@ class GraphCanvas(MainPanel):
             node = self.nodes[node_id]
             node.removed=True
             node.deleteLater()
+            del self.nodes[node_id]
             node.slide('size', to_value=QSize(0, 0))
 
         self.update()
@@ -176,7 +177,8 @@ class NodeTitle(RLineEdit):
 
     def focusInEvent(self, event):
         super().focusInEvent(event)
-        self.node.slide('size', to_value=self.node.SIZE_WIDE)
+        if self.node.size().width() < self.node.SIZE_WIDE.width():
+            self.node.slide('size', to_value=self.node.SIZE_WIDE)
 
     def focusOutEvent(self, event):
         super().focusOutEvent(event)
@@ -265,7 +267,8 @@ class GraphNode(MainPanel):
         Node.update(name=self.label.text()).where(Node.id==self.data['id']).execute()
         text_width = len(self.label.text())*10
         self.SIZE_WIDE.setWidth(max(text_width + 100, 200))
-        self.slide('size', to_value=self.SIZE_WIDE)
+        if self.size().width() < self.SIZE_WIDE.width():
+            self.slide('size', to_value=self.SIZE_WIDE)
 
     def update_data(self, data):
         self.data = data
@@ -289,7 +292,8 @@ class GraphNode(MainPanel):
     def enterEvent(self, event):
         super().enterEvent(event)
         if not self.removed:
-            self.slide('size', to_value=self.SIZE_WIDE)
+            if self.size().width() < self.SIZE_WIDE.width():
+                self.slide('size', to_value=self.SIZE_WIDE)
 
     def leaveEvent(self, event):
         super().leaveEvent(event)
