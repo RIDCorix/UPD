@@ -1,3 +1,4 @@
+from os import listdir
 from PySide6 import QtCore
 from PySide6 import QtWidgets
 from PySide6.QtGui import QAction, QBrush, QColor, QIcon, QPainter, QPen, QPixmap, QTransform
@@ -5,7 +6,8 @@ from PySide6.QtWidgets import QCheckBox, QGraphicsItem, QGraphicsScene, QGraphic
 from PySide6.QtCore import Property, QPoint, QRect, QSize, Qt
 from .tool import tool
 from .models import Project, Connection, Node
-
+from os import listdir
+from os.path import isfile, join
 from upd.ui import MainPanel, RLineEdit, RGridView, RWidget, RButton, RTextEdit
 
 
@@ -26,6 +28,14 @@ class UsPanel(MainPanel):
         self.grid.setGeometry(geometry)
         super().paintEvent(e)
 
+class IconSelector(RGridView):
+    def get_data(self):
+        data = []
+        path = 'assets/icon'
+        icons = [f for f in listdir(path) if isfile(join(path, f))]
+        for icon in icons:
+            data.append({'id': icon, 'icon': icon, 'name': icon})
+        return data
 
 class GraphCanvas(MainPanel):
     def __init__(self, data, *args, **kwargs):
@@ -61,6 +71,14 @@ class GraphCanvas(MainPanel):
         self.add_node_menu = QMenu(self)
         self.add_node_menu.addAction('hello', self.add_node)
         self.refresh_data()
+
+        self.icon_selector = IconSelector(self)
+        self.icon_selector.setFixedSize(600, 400)
+        self.icon_selector.refresh_data()
+
+    def paintEvent(self, e):
+        self.icon_selector.refresh()
+        return super().paintEvent(e)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Alt:
@@ -164,8 +182,8 @@ class GraphCanvas(MainPanel):
             node = self.nodes[node_id]
             node.removed=True
             node.deleteLater()
+            del self.nodes[node_id]
             node.slide('size', to_value=QSize(0, 0))
-
         self.update()
 
 
@@ -176,7 +194,8 @@ class NodeTitle(RLineEdit):
 
     def focusInEvent(self, event):
         super().focusInEvent(event)
-        self.node.slide('size', to_value=self.node.SIZE_WIDE)
+        if self.node.size().width() < self.node.SIZE_WIDE.width():
+            self.node.slide('size', to_value=self.node.SIZE_WIDE)
 
     def focusOutEvent(self, event):
         super().focusOutEvent(event)
@@ -213,8 +232,9 @@ class GraphNode(MainPanel):
         self.header_layout = QHBoxLayout()
         self.header.setLayout(self.header_layout)
 
-        self.icon = RButton(QPixmap('assets/file-cabinet/icon.png'), '')
+        self.icon = RButton(QPixmap('assets/icon/BELL.png'), '')
         self.icon.setFixedSize(30, 30)
+        self.icon.clicked.connect(lambda: self.parent().icon_selector.show())
 
         self.remove_button = RButton('x')
         self.remove_button.setFixedSize(30, 30)
@@ -265,7 +285,8 @@ class GraphNode(MainPanel):
         Node.update(name=self.label.text()).where(Node.id==self.data['id']).execute()
         text_width = len(self.label.text())*10
         self.SIZE_WIDE.setWidth(max(text_width + 100, 200))
-        self.slide('size', to_value=self.SIZE_WIDE)
+        if self.size().width() < self.SIZE_WIDE.width():
+            self.slide('size', to_value=self.SIZE_WIDE)
 
     def update_data(self, data):
         self.data = data
@@ -289,7 +310,8 @@ class GraphNode(MainPanel):
     def enterEvent(self, event):
         super().enterEvent(event)
         if not self.removed:
-            self.slide('size', to_value=self.SIZE_WIDE)
+            if self.size().width() < self.SIZE_WIDE.width():
+                self.slide('size', to_value=self.SIZE_WIDE)
 
     def leaveEvent(self, event):
         super().leaveEvent(event)
