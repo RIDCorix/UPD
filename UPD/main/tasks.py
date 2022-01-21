@@ -12,7 +12,7 @@ def self_check(tool, *args, **kwargs):
     console.out('checking version: v1.2.0 (already up to date)')
 
 
-# @UPD.init_task
+@UPD.init_task
 def count_one_to_ten(tool, *args, **kwargs):
     console = kwargs.get('console')
     ten =  10

@@ -33,8 +33,6 @@ class Node(RBaseModel):
     name = CharField(default='')
     description = CharField(default='')
 
-    removed = BooleanField(default=False)
-
     x = FloatField(default=0)
     y = FloatField(default=0)
 

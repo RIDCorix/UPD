@@ -12,4 +12,3 @@ class Settings(RBaseModel):
     key = CharField(default='')
     value = CharField(default='')
 
-    removed = BooleanField(default=False)
